@@ -1,0 +1,27 @@
+project_name: dugong
+release:
+  github:
+    owner: joshm998
+    name: dugong
+
+builds:
+  - id: default
+    main: ./cmd/server/main.go
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    overrides:
+      - goos: linux
+        goarch: arm64
+        env:
+          - CC=aarch64-linux-gnu-gcc
+    binary: dugong
+
+archives:
+  - id: binary-only
+    format: binary
+    name_template: "dugong_{{ .Version }}_linux_{{ .Arch }}"
