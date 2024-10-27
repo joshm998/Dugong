@@ -1,0 +1,49 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+build/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# env file
+.env
+
+# Testing Database files
+logs.db
+logs.db-shm
+logs.db-wal
+
+server.crt
+server.key
+
+# Local
+.DS_Store
+*.local
+*.log*
+
+# Dist
+node_modules
+dist/
+.vinxi
+.output
+.vercel
+.netlify
+.wrangler
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
