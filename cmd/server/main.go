@@ -39,12 +39,21 @@ func main() {
 
 	monitor := system.NewMonitor()
 
+	proxyManager, err := system.NewProxyManager(database.Queries, cfg.CertEmail)
+	if err != nil {
+		log.Fatalf("Failed to create proxy manager: %v", err)
+	}
+	go func() {
+		if err := proxyManager.Start(); err != nil {
+			log.Printf("Proxy manager failed: %v", err)
+		}
+	}()
 	// Create and start the scheduler
 	schedulerInstance := scheduler.NewScheduler(dockerClient, logManager, 7*24*time.Hour, database)
 	schedulerInstance.Start()
 	defer schedulerInstance.Stop()
 
-	router := routes.SetupRoutes(cfg, database, dockerClient, logManager, monitor, schedulerInstance)
+	router := routes.SetupRoutes(cfg, database, dockerClient, logManager, monitor, proxyManager, schedulerInstance)
 
 	log.Printf("Server starting on %s", cfg.ServerAddr)
 	log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%v", cfg.ServerAddr), "server.crt", "server.key", router))

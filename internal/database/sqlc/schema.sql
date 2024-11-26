@@ -45,3 +45,14 @@ CREATE TABLE health_check_results
     checked_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (health_check_id) REFERENCES health_checks (id)
 );
+
+
+-- Proxy Sites Table
+CREATE TABLE proxy_sites
+(
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    container_name  TEXT    NOT NULL,
+    port            TEXT    NOT NULL,
+    domain          TEXT    NOT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
