@@ -10,6 +10,7 @@ type Config struct {
 	JWTSecret     []byte
 	AdminUsername string
 	AdminPassword string
+	CertEmail     string
 }
 
 func Load() (*Config, error) {
@@ -19,5 +20,6 @@ func Load() (*Config, error) {
 		JWTSecret:     []byte(os.Getenv("JWT_SECRET")),
 		AdminUsername: os.Getenv("ADMIN_USERNAME"),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		CertEmail:     os.Getenv("CERT_EMAIL"),
 	}, nil
 }

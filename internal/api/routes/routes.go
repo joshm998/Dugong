@@ -20,6 +20,7 @@ func SetupRoutes(
 	dockerClient *docker.Client,
 	logManager *logger.Manager,
 	monitor *system.Monitor,
+	proxyManager *system.ProxyManager,
 	scheduler *scheduler.Scheduler,
 ) *chi.Mux {
 	r := chi.NewRouter()
@@ -29,6 +30,7 @@ func SetupRoutes(
 	healthCheckHandler := handlers.NewHealthCheckHandler(scheduler, db.Queries)
 	systemHandler := handlers.NewSystemHandler(monitor)
 	logsHandler := handlers.NewLogsHandler(logManager)
+	proxyHandler := handlers.NewProxyHandler(proxyManager)
 
 	// Middleware
 	r.Use(middleware.Logger)
@@ -64,6 +66,7 @@ func SetupRoutes(
 		r.Get("/logs", logsHandler.SearchLogs)
 		SetupHealthCheckRoutes(r, healthCheckHandler)
 		SetupSystemRoutes(r, systemHandler)
+		SetupProxyRoutes(r, proxyHandler)
 	})
 
 	r.NotFound(handlers.NotFoundHandler)

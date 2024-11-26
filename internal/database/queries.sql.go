@@ -67,6 +67,31 @@ func (q *Queries) AddHealthCheckResult(ctx context.Context, arg AddHealthCheckRe
 	return i, err
 }
 
+const addProxySite = `-- name: AddProxySite :one
+INSERT INTO proxy_sites (container_name, port, domain)
+VALUES (?, ?, ?)
+    RETURNING id, container_name, port, domain, created_at
+`
+
+type AddProxySiteParams struct {
+	ContainerName string
+	Port          string
+	Domain        string
+}
+
+func (q *Queries) AddProxySite(ctx context.Context, arg AddProxySiteParams) (ProxySite, error) {
+	row := q.db.QueryRowContext(ctx, addProxySite, arg.ContainerName, arg.Port, arg.Domain)
+	var i ProxySite
+	err := row.Scan(
+		&i.ID,
+		&i.ContainerName,
+		&i.Port,
+		&i.Domain,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, hashed_password)
 VALUES (?, ?)
@@ -116,6 +141,15 @@ DELETE FROM log_entries WHERE timestamp < ?
 
 func (q *Queries) DeleteOldLogs(ctx context.Context, timestamp time.Time) error {
 	_, err := q.db.ExecContext(ctx, deleteOldLogs, timestamp)
+	return err
+}
+
+const deleteProxySite = `-- name: DeleteProxySite :exec
+DELETE FROM proxy_sites WHERE id = ?
+`
+
+func (q *Queries) DeleteProxySite(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteProxySite, id)
 	return err
 }
 
@@ -321,6 +355,39 @@ func (q *Queries) GetHealthChecks(ctx context.Context) ([]GetHealthChecksRow, er
 			&i.Url,
 			&i.Interval,
 			&i.LastCheckedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProxySites = `-- name: GetProxySites :many
+SELECT id, container_name, port, domain, created_at FROM proxy_sites
+`
+
+func (q *Queries) GetProxySites(ctx context.Context) ([]ProxySite, error) {
+	rows, err := q.db.QueryContext(ctx, getProxySites)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProxySite
+	for rows.Next() {
+		var i ProxySite
+		if err := rows.Scan(
+			&i.ID,
+			&i.ContainerName,
+			&i.Port,
+			&i.Domain,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

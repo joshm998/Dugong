@@ -106,3 +106,15 @@ DELETE FROM health_checks WHERE id = ?;
 
 -- name: DeleteOldHealthChecks :exec
 DELETE FROM health_check_results WHERE checked_at < ?;
+
+
+-- name: AddProxySite :one
+INSERT INTO proxy_sites (container_name, port, domain)
+VALUES (?, ?, ?)
+    RETURNING *;
+
+-- name: DeleteProxySite :exec
+DELETE FROM proxy_sites WHERE id = ?;
+
+-- name: GetProxySites :many
+SELECT * FROM proxy_sites

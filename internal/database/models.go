@@ -36,6 +36,14 @@ type LogEntry struct {
 	UpdatedAt   time.Time
 }
 
+type ProxySite struct {
+	ID            int64
+	ContainerName string
+	Port          string
+	Domain        string
+	CreatedAt     sql.NullTime
+}
+
 type User struct {
 	ID             int64
 	Username       string
