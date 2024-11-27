@@ -209,6 +209,58 @@ install_docker() {
     print_status "User $USER_NAME added to Docker group"
 }
 
+
+generate_self_signed_certs() {
+    local CERT_DIR="$1"
+
+    print_status "Generating self-signed certificates..."
+
+    # Create a configuration file for OpenSSL
+    local OPENSSL_CONFIG="$CERT_DIR/openssl.cnf"
+    cat > "$OPENSSL_CONFIG" << EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_req
+
+[dn]
+C = US
+ST = Local
+L = Local
+O = Dugong
+OU = Dugong Self-Signed
+CN = localhost
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+EOF
+
+    # Generate private key
+    openssl genrsa -out "$CERT_DIR/server.key" 2048
+
+    # Generate self-signed certificate
+    openssl req -new -x509 -days 365 -key "$CERT_DIR/server.key" -out "$CERT_DIR/server.crt" -config "$OPENSSL_CONFIG"
+
+    # Generate PEM file (combine key and certificate)
+    cat "$CERT_DIR/server.key" "$CERT_DIR/server.crt" > "$CERT_DIR/server.pem"
+
+    # Clean up the temporary OpenSSL config
+    rm "$OPENSSL_CONFIG"
+
+    # Set correct permissions
+    chmod 600 "$CERT_DIR/server.key" "$CERT_DIR/server.pem"
+    chmod 644 "$CERT_DIR/server.crt"
+
+    print_status "Self-signed certificates generated in $CERT_DIR"
+}
+
+
 # Main installation function
 main() {
     check_root
@@ -266,6 +318,19 @@ main() {
         fi
     fi
 
+     # Self-signed certificate generation
+      GENERATE_SELF_SIGNED=$(get_yes_no "Would you like to generate self-signed SSL certificates? (Not recommended for external use)" "y")
+
+      # Proxy certificate auto-generation
+      AUTO_PROXY_CERTS=$(get_yes_no "Would you like to use auto-generated certificates for the proxy?" "n")
+
+
+    # Generate certificates if selected
+    if [ "$GENERATE_SELF_SIGNED" = "true" ]; then
+        # Generate self-signed certificates
+        generate_self_signed_certs "$SETTINGS_DIR/data"
+    fi
+
     # Create directory structure
     mkdir -p "$INSTALL_DIR"
     mkdir -p "$SETTINGS_DIR"
@@ -293,6 +358,8 @@ main() {
     ENV_FILE="$SETTINGS_DIR/config.env"
     cat > "$ENV_FILE" << EOF
 DATABASE_URL=${SETTINGS_DIR}/data/${DB_NAME}
+CERT_DIR=${SETTINGS_DIR}/data
+GENERATE_CERTIFICATES=false
 JWT_SECRET=${JWT_SECRET}
 SERVER_ADDR=${APP_PORT}
 EOF
