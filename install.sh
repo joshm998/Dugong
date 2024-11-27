@@ -322,13 +322,18 @@ main() {
       GENERATE_SELF_SIGNED=$(get_yes_no "Would you like to generate self-signed SSL certificates? (Not recommended for external use)" "y")
 
       # Proxy certificate auto-generation
-      AUTO_PROXY_CERTS=$(get_yes_no "Would you like to use auto-generated certificates for the proxy?" "n")
+      AUTO_PROXY_CERTS=$(get_yes_no "Would you like to use auto-generated certificates for the proxy?" "y")
 
 
     # Generate certificates if selected
     if [ "$GENERATE_SELF_SIGNED" = "true" ]; then
         # Generate self-signed certificates
         generate_self_signed_certs "$SETTINGS_DIR/data"
+    fi
+
+    # Generate certificates if selected
+    if [ "AUTO_PROXY_CERTS" = "true" ]; then
+        CERT_EMAIL=$(get_input "Enter SSL Certificate Email Address" "")
     fi
 
     # Create directory structure
@@ -362,6 +367,7 @@ CERT_DIR=${SETTINGS_DIR}/data
 GENERATE_CERTIFICATES=false
 JWT_SECRET=${JWT_SECRET}
 SERVER_ADDR=${APP_PORT}
+CERT_EMAIL=${CERT_EMAIL}
 EOF
 
     # Create systemd service
