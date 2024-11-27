@@ -99,17 +99,10 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 		certmagic.DefaultACME.Email = config.CertEmail
 		certmagic.DefaultACME.Agreed = true
 
-		// Create a certmagic config
-		magic := certmagic.NewDefault()
-
-		// Load and manage certificates for the domains
-		err := magic.ManageSync(ctx, hosts)
+		tlsConfig, err = certmagic.TLS(hosts)
 		if err != nil {
-			return nil, fmt.Errorf("failed to manage certificates: %v", err)
+			return nil, err
 		}
-
-		// Get TLS configuration
-		tlsConfig = magic.TLSConfig()
 	} else {
 		// Use self-generated certificates for local development
 		tlsConfig = &tls.Config{
