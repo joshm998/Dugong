@@ -6,7 +6,6 @@ import (
 	"dugong/internal/config"
 	"dugong/internal/database"
 	"fmt"
-	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +14,8 @@ import (
 	"path"
 	"strconv"
 	"sync"
+
+	"github.com/caddyserver/certmagic"
 )
 
 type ProxySiteModel struct {
@@ -94,14 +95,21 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 	// Create the TLS configuration
 	var tlsConfig *tls.Config
 	if isVPS {
-		// Use Let's Encrypt for VPS
-		m := &autocert.Manager{
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(hosts...),
-			Cache:      autocert.DirCache(config.CertDirectory),
-			Email:      config.CertEmail,
+		// Configure CertMagic
+		certmagic.DefaultACME.Email = config.CertEmail
+		certmagic.DefaultACME.Agreed = true
+
+		// Create a certmagic config
+		magic := certmagic.NewDefault()
+
+		// Load and manage certificates for the domains
+		err := magic.ManageSync(ctx, hosts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to manage certificates: %v", err)
 		}
-		tlsConfig = m.TLSConfig()
+
+		// Get TLS configuration
+		tlsConfig = magic.TLSConfig()
 	} else {
 		// Use self-generated certificates for local development
 		tlsConfig = &tls.Config{
