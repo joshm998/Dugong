@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"time"
 
 	"dugong/internal/config"
@@ -39,7 +40,7 @@ func main() {
 
 	monitor := system.NewMonitor()
 
-	proxyManager, err := system.NewProxyManager(database.Queries, cfg.CertEmail)
+	proxyManager, err := system.NewProxyManager(database.Queries, cfg)
 	if err != nil {
 		log.Fatalf("Failed to create proxy manager: %v", err)
 	}
@@ -56,5 +57,5 @@ func main() {
 	router := routes.SetupRoutes(cfg, database, dockerClient, logManager, monitor, proxyManager, schedulerInstance)
 
 	log.Printf("Server starting on %s", cfg.ServerAddr)
-	log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%v", cfg.ServerAddr), "server.crt", "server.key", router))
+	log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%v", cfg.ServerAddr), path.Join(cfg.CertDirectory, "server.crt"), path.Join(cfg.CertDirectory, "server.key"), router))
 }

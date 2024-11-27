@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"crypto/tls"
+	"dugong/internal/config"
 	"dugong/internal/database"
 	"fmt"
 	"golang.org/x/crypto/acme/autocert"
@@ -11,6 +12,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"sync"
 )
@@ -23,14 +25,14 @@ type ProxySiteModel struct {
 }
 
 type ProxyManager struct {
-	server    *http.Server
-	config    map[string]string
-	configMu  sync.RWMutex
-	certEmail string
-	db        *database.Queries
+	server        *http.Server
+	config        map[string]string
+	certDirectory string
+	configMu      sync.RWMutex
+	db            *database.Queries
 }
 
-func NewProxyManager(db *database.Queries, certEmail string) (*ProxyManager, error) {
+func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager, error) {
 	// Define the mapping of domains to backend server URLs
 	ctx := context.Background()
 	sites, err := db.GetProxySites(ctx)
@@ -39,9 +41,9 @@ func NewProxyManager(db *database.Queries, certEmail string) (*ProxyManager, err
 	}
 
 	pm := &ProxyManager{
-		config:    make(map[string]string),
-		certEmail: certEmail,
-		db:        db,
+		config:        make(map[string]string),
+		db:            db,
+		certDirectory: config.CertDirectory,
 	}
 
 	for _, site := range sites {
@@ -82,7 +84,7 @@ func NewProxyManager(db *database.Queries, certEmail string) (*ProxyManager, err
 	}
 
 	// Check if the server is running on a VPS
-	isVPS := false // Ensure this is set correctly
+	isVPS := config.GenerateCertificates == "true"
 
 	var hosts []string
 	for _, site := range sites {
@@ -97,7 +99,7 @@ func NewProxyManager(db *database.Queries, certEmail string) (*ProxyManager, err
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(hosts...),
 			Cache:      autocert.DirCache("certs"),
-			Email:      certEmail,
+			Email:      config.CertEmail,
 		}
 		tlsConfig = m.TLSConfig()
 	} else {
@@ -130,7 +132,7 @@ func (p *ProxyManager) Start() error {
 	fmt.Println("Starting server on port 80 and 443...")
 
 	// Start HTTPS server
-	return p.server.ListenAndServeTLS("server.crt", "server.key")
+	return p.server.ListenAndServeTLS(path.Join(p.certDirectory, "server.crt"), path.Join(p.certDirectory, "server.key"))
 }
 
 func (p *ProxyManager) DeleteSite(ctx context.Context, siteId string) error {
