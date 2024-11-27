@@ -6,6 +6,7 @@ import (
 	"dugong/internal/config"
 	"dugong/internal/database"
 	"fmt"
+	"github.com/mholt/acmez/v2"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -93,27 +94,24 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 	}
 
 	// Create the TLS configuration
-	var tlsConfig *tls.Config
+	tlsConfig := &tls.Config{
+		MinVersion:       tls.VersionTLS13,
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
 	if isVPS {
 		// Configure CertMagic
 		certmagic.DefaultACME.Email = config.CertEmail
 		certmagic.DefaultACME.Agreed = true
 
-		tlsConfig, err = certmagic.TLS(hosts)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// Use self-generated certificates for local development
-		tlsConfig = &tls.Config{
-			MinVersion:       tls.VersionTLS13,
-			CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			},
-		}
+		// Create a certmagic config
+		magic := certmagic.NewDefault()
+		tlsConfig.GetCertificate = magic.GetCertificate
+		tlsConfig.NextProtos = append(tlsConfig.NextProtos, acmez.ACMETLS1Protocol)
 	}
 
 	// HTTPS server with proxy
