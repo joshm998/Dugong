@@ -98,7 +98,7 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(hosts...),
-			Cache:      autocert.DirCache("certs"),
+			Cache:      autocert.DirCache(config.CertDirectory),
 			Email:      config.CertEmail,
 		}
 		tlsConfig = m.TLSConfig()
