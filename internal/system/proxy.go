@@ -6,7 +6,6 @@ import (
 	"dugong/internal/config"
 	"dugong/internal/database"
 	"fmt"
-	"github.com/mholt/acmez/v2"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -94,24 +93,34 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 	}
 
 	// Create the TLS configuration
-	tlsConfig := &tls.Config{
-		MinVersion:       tls.VersionTLS13,
-		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-		},
-	}
+	var tlsConfig *tls.Config
 	if isVPS {
 		// Configure CertMagic
 		certmagic.DefaultACME.Email = config.CertEmail
 		certmagic.DefaultACME.Agreed = true
+		certmagic.HTTPSPort = 4432
+		certmagic.DefaultACME.DisableHTTPChallenge = true
 
-		// Create a certmagic config
 		magic := certmagic.NewDefault()
-		tlsConfig.GetCertificate = magic.GetCertificate
-		tlsConfig.NextProtos = append(tlsConfig.NextProtos, acmez.ACMETLS1Protocol)
+
+		err := magic.ManageSync(ctx, hosts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to manage certificates: %v", err)
+		}
+
+		// Get TLS configuration
+		tlsConfig = magic.TLSConfig()
+	} else {
+		// Use self-generated certificates for local development
+		tlsConfig = &tls.Config{
+			MinVersion:       tls.VersionTLS13,
+			CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			},
+		}
 	}
 
 	// HTTPS server with proxy
