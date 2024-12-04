@@ -124,7 +124,7 @@ function ContainerComponent() {
 
     const useDeleteHealthCheck = useMutation({
         mutationFn: async (id: string) => {
-            const response = await fetch(`/api/health-checks/${id}`, {
+            const response = await fetch(`/api/health-check/${id}`, {
                 method: 'DELETE',
             });
 
