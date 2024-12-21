@@ -12,7 +12,9 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/caddyserver/certmagic"
@@ -129,7 +131,7 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 	// HTTPS server with proxy
 	httpsServer := &http.Server{
 		Addr:      ":4432",
-		Handler:   proxy,
+		Handler:   trailingSlashMiddleware(proxy),
 		ErrorLog:  log.New(os.Stderr, "", log.LstdFlags),
 		TLSConfig: tlsConfig,
 	}
@@ -137,6 +139,26 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 	pm.server = httpsServer
 
 	return pm, nil
+}
+
+func trailingSlashMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// This Middleware is a solution to the reverse proxy redirecting to localhost/path/ instead of the correct host.
+
+		// Check if the URL path is a file path
+		if !strings.Contains(r.URL.Path, ".") || filepath.Ext(r.URL.Path) == "" {
+			// Check if URL path is missing a trailing slash
+			if !strings.HasSuffix(r.URL.Path, "/") {
+				// Redirect to the same URL with a trailing slash
+				http.Redirect(w, r, r.URL.Path+"/", http.StatusMovedPermanently)
+				return
+			}
+		}
+
+		// Continue to the next handler
+		next.ServeHTTP(w, r)
+
+	})
 }
 
 func (p *ProxyManager) Start() error {
