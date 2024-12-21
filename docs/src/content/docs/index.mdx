@@ -1,0 +1,36 @@
+---
+title: Dugong
+description: Get started building your docs site with Starlight.
+template: splash
+hero:
+  tagline: Dugong Infra is your all-in-one solution for streamlined homelab and VPS management. Easily log, monitor, and deploy your microSaaS or personal projects.
+  image:
+    alt: A glittering, brightly colored logo
+    file: /src/assets/logo.svg
+  actions:
+    - text: Get Started
+      link: /getting-started
+      icon: right-arrow
+    - text: Star Us on GitHub
+      link: https://github.com/joshm998/dugong
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+
+### What is Dugong?
+Dugong Infra is an all-in-one solution that allows users to manage a server with a intuitive interface.
+
+<CardGrid>
+	<Card title="Lightweight" icon="rocket">
+		Dugong is built in golang and designed to be as light as possible which means it can even be used on low end servers.
+	</Card>
+	<Card title="Easy to Install" icon="approve-check">
+		Installation is as simple as running a single script on a supported linux distro, everything is then automatically setup.
+	</Card>
+	<Card title="Feature Packed" icon="open-book">
+		Dugong has Logging, Monitoring, Container Management, A Reverse Proxy with automatic SSL and more...
+	</Card>
+</CardGrid>

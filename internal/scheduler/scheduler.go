@@ -171,7 +171,7 @@ func (s *Scheduler) runHealthCheck(check HealthCheck) {
 		log.Printf("Error saving health check result: %v", err)
 	}
 
-	log.Printf("Health check '%s' completed in %v with status: %s", check.Name, duration, status)
+	log.Printf("Health check '%s' completed in %v with status: %s (message: %s)", check.Name, duration, status, message)
 }
 
 func (s *Scheduler) AddHealthCheck(name string, url string, interval time.Duration) error {

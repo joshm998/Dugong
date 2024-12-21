@@ -1,0 +1,157 @@
+---
+title: Getting Started
+description: A guide in my new Starlight docs site.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+
+
+## Debian-Based Systems
+
+Getting started on Debian-based systems is straightforward with the interactive install script. Run the following command to begin the installation process:
+
+```bash
+sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/joshm998/dugong/main/install.sh)"
+```
+Please read the script here before running it locally. For other platforms see the release page for binaries that can be installed and configured.
+
+[//]: # (Please read the script [here]&#40;https://github.com/joshm998/dugong/install.sh&#41; before running it locally. For other platforms see the release page for binaries that can be installed and configured.)
+
+
+
+## Other Linux Distros
+Dugong is a single binary which means installation on other linux distros can be done through manual binary installation or systemd service setup.
+
+<Tabs>
+  <TabItem label="systemd">
+
+
+##### 1. Download the Latest Release
+First, download the latest release from the releases page or use the command below to automatically fetch it:
+```bash
+VERSION=$(curl -s https://api.github.com/repos/joshm998/dugong/releases/latest | grep -o '"tag_name": ".*"' | cut -d'"' -f4)
+wget https://github.com/joshm998/dugong/releases/download/${VERSION}/dugong_${VERSION#v}_linux_amd64
+```
+
+##### 2. Make the Binary Executable
+Once downloaded, make the binary executable and move it to your desired location:
+```bash
+chmod +x dugong_${VERSION#v}_linux_amd64
+sudo mv dugong_${VERSION#v}_linux_amd64 /usr/local/bin/dugong
+```
+
+##### 3. Create the Configuration Directory
+Next, create the configuration directory that will store configuration files and data:
+```bash
+sudo mkdir -p ~/config/dugong/data
+```
+
+##### 4. Create Environment Configuration
+Create an environment file to store configuration settings:
+```bash
+sudo nano ~/config/dugong/config.env
+```
+
+Example `~/.config/dugong/config.env`:
+```
+DATABASE_URL=~/.config/dugong/data/app.db
+CERT_DIR=~/.config/dugong/data
+GENERATE_CERTIFICATES=false
+JWT_SECRET=your_secure_random_secret
+SERVER_ADDR=8080
+CERT_EMAIL=your_email@example.com
+```
+
+##### 5. Create a Systemd Service
+Create the systemd service file:
+```bash
+sudo nano /etc/systemd/system/dugong.service
+```
+
+Systemd service configuration:
+```
+[Unit]
+Description=Dugong Service
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/dugong/config.env
+ExecStart=/usr/local/bin/dugong
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+##### 6. Manage the Service
+Reload systemd to apply changes, enable the service to start on boot, and manage its status:
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable service to start on boot
+sudo systemctl enable dugong.service
+
+# Start the service
+sudo systemctl start dugong.service
+
+# Check service status
+sudo systemctl status dugong.service
+```
+
+</TabItem>
+<TabItem label="Shell Script">
+
+##### 1. Download the Latest Release
+First, download the latest release from the releases page or use the command below to automatically fetch it:
+```bash
+VERSION=$(curl -s https://api.github.com/repos/joshm998/dugong/releases/latest | grep -o '"tag_name": ".*"' | cut -d'"' -f4)
+wget https://github.com/joshm998/dugong/releases/download/${VERSION}/dugong_${VERSION#v}_linux_amd64
+```
+
+##### 2. Make the Binary Executable
+Once downloaded, make the binary executable and move it to your desired location:
+```bash
+chmod +x dugong_${VERSION#v}_linux_amd64
+sudo mv dugong_${VERSION#v}_linux_amd64 /usr/local/bin/dugong
+```
+
+##### 3. Create the Configuration Directory
+Next, create the configuration directory that will store configuration files and data:
+```bash
+sudo mkdir -p ~/config/dugong/data
+```
+
+##### 4. Create a Shell Script to Manage the Environment
+Create a script named start-dugong.sh to manage the environment variables and start Dugong:
+```bash
+# Create a shell script to manage environment
+nano start-dugong.sh
+```
+
+Add the following contents to `start-dugong.sh`:
+```bash
+#!/bin/bash
+export DATABASE_URL=./app.db
+export CERT_DIR=./data
+export GENERATE_CERTIFICATES=false
+export JWT_SECRET=your_secure_random_secret
+export SERVER_ADDR=8080
+export CERT_EMAIL=your_email@example.com
+
+./dugong
+```
+
+##### 5. Make the Script Executable
+Set the script as executable and run it:
+```bash
+# Make script executable
+chmod +x start-dugong.sh
+
+# Run the script
+./start-dugong.sh
+```
+
+</TabItem>
+</Tabs>
