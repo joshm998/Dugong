@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/caddyserver/certmagic"
@@ -67,6 +68,18 @@ func NewProxyManager(db *database.Queries, config *config.Config) (*ProxyManager
 			targetURL, err := url.Parse(target)
 			if err != nil {
 				return
+			}
+
+			// Preserve the original path and query parameters
+			originalPath := req.URL.Path
+			originalRawQuery := req.URL.RawQuery
+
+			// Update the request URL with the target scheme and host while preserving the path
+			req.URL.Scheme = targetURL.Scheme
+			req.URL.Host = targetURL.Host
+			req.URL.Path = joinPaths(targetURL.Path, originalPath)
+			if originalRawQuery != "" {
+				req.URL.RawQuery = originalRawQuery
 			}
 
 			req.Header.Del("X-Forwarded-For")
@@ -222,4 +235,16 @@ func (p *ProxyManager) ReloadConfiguration(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func joinPaths(basePath, requestPath string) string {
+	hasBaseSlash := strings.HasSuffix(basePath, "/")
+	hasRequestSlash := strings.HasPrefix(requestPath, "/")
+	switch {
+	case hasBaseSlash && hasRequestSlash:
+		return basePath + requestPath[1:]
+	case !hasBaseSlash && !hasRequestSlash:
+		return basePath + "/" + requestPath
+	}
+	return basePath + requestPath
 }
