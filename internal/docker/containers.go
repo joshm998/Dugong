@@ -60,12 +60,15 @@ func (c *Client) GetLogs(ctx context.Context, id string, since string) error {
 	for scanner.Scan() {
 		logLine := scanner.Text()
 		// Split the log line into timestamp and message
-		parts := strings.SplitN(logLine[8:], " ", 2)
-		if len(parts) == 2 {
-			timestamp, message := parts[0], parts[1]
-			if err := c.logManager.SaveLog(ctx, id, timestamp, message); err != nil {
-				if !strings.Contains(err.Error(), "UNIQUE constraint failed") {
-					log.Printf("Error saving log for container %s: %v", id, err)
+		// TODO: Rework logging detection to be more robust and support more formats
+		if len(logLine) > 8 {
+			parts := strings.SplitN(logLine[8:], " ", 2)
+			if len(parts) == 2 {
+				timestamp, message := parts[0], parts[1]
+				if err := c.logManager.SaveLog(ctx, id, timestamp, message); err != nil {
+					if !strings.Contains(err.Error(), "UNIQUE constraint failed") {
+						log.Printf("Error saving log for container %s: %v", id, err)
+					}
 				}
 			}
 		}
